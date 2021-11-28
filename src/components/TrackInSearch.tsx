@@ -8,7 +8,7 @@ interface TrackInSearchProps {
 function TrackInSearch(props: TrackInSearchProps) {
 
     return(
-        <div className={`rounded-xl border-2 bg-white p-2 my-2 ${props.selected ? "border-blue-500" : "hover:border-blue-300"}`}>
+        <div className={`rounded-xl border-4 bg-white border-gray-400 p-2 my-2 ${props.selected ? "border-green-500" : "hover:border-green-300"}`}>
             <strong>{props.result.artist}</strong>
             <br/>
             {props.result.trackName}
