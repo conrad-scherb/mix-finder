@@ -9,6 +9,21 @@
             "cwd": "${workspaceRoot}/frontend",
             "runtimeExecutable": "yarn",
             "runtimeArgs": ["start"]
+        },
+        {
+            "name": "Backend",
+            "type": "node",
+            "request": "launch",
+            "preLaunchTask": "Backend: Install dependencies",
+            "cwd": "${workspaceRoot}/backend",
+            "runtimeExecutable": "yarn",
+            "runtimeArgs": ["start:dev"]
+        }
+    ],
+    "compounds": [
+        {
+            "name": "MixFinder",
+            "configurations": ["Frontend", "Backend"]
         }
     ]
 }

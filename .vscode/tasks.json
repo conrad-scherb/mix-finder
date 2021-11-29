@@ -7,6 +7,13 @@
             "command": "yarn",
             "args": ["--cwd", "${workspaceRoot}/frontend", "install"],
             "problemMatcher": []
+        },
+        {
+            "label": "Backend: Install dependencies",
+            "type": "shell",
+            "command": "yarn",
+            "args": ["--cwd", "${workspaceRoot}/backend", "install"],
+            "problemMatcher": []
         }
     ]
 }
