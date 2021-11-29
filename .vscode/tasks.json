@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Frontend: Install dependencies",
+            "type": "shell",
+            "command": "yarn",
+            "args": ["--cwd", "${workspaceRoot}/frontend", "install"],
+            "problemMatcher": []
+        }
+    ]
+}
