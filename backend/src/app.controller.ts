@@ -27,12 +27,9 @@ export class AppController {
   ): Promise<any> {
     const track = await this.appService.getTrack(id);
     const tracklistUrls = trackToAppearanceURLs(track);
+    
+    const adjacentTracks = await Promise.all(tracklistUrls.map(t => findAdjacentTracks(t, id)))
 
-    let adjacentTracks: string[] = [];
-    for (let tracklistURL of tracklistUrls) {
-      adjacentTracks = adjacentTracks.concat(await findAdjacentTracks(tracklistURL, id));
-    }
-
-    return adjacentTracks // Nodes of all related tracks
+    return Array.prototype.concat.apply([], adjacentTracks); // Nodes of all related tracks
   }
 }
