@@ -4,7 +4,7 @@ import { getTrack, getTracklist, Track, TrackInTracklist, TrackList, TracklistSe
 @Injectable()
 export class AppService {
   async getTracklist(url: string): Promise<TrackList | undefined> {
-    return await getTracklist(url);
+    return await getTracklist(url, null);
   }
 
   async getTrack(url: string): Promise<Track | undefined> {
