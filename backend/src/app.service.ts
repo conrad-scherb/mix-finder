@@ -29,6 +29,15 @@ export class AppService {
     return await getTrack(url);
   }
 
+  async getBatchTracks(urls: string[]): Promise<(Track | undefined)[]> {
+    const promises = [];
+    for (const i in urls) {
+      promises.push(getTrack(urls[i], this.socksProxies[parseInt(i)+this.socksProxyListPosition].replace(/"/g, '')));
+    }
+    this.rotateProxies(promises.length)  
+    return await Promise.all(promises);
+  }
+
   async getAdjacentTracks(id: string) {
     const track = await this.getTrack(id);
     const tracklistUrls = trackToAppearanceURLs(track);
@@ -39,13 +48,14 @@ export class AppService {
       scrapePromises.push(scrape);
     }
 
-    // Proxy rotation
-    this.socksProxyListPosition += (this.socksProxyListPosition + tracklistUrls.length < this.socksProxies.length) 
-                                 ? tracklistUrls.length
-                                 : 0
+    this.rotateProxies(tracklistUrls.length)    
     
     const adjacentTracks = await Promise.all(scrapePromises);
 
     return Array.prototype.concat.apply([], adjacentTracks); // Nodes of all related tracks
+  }
+
+  rotateProxies(by: number) {
+    this.socksProxyListPosition = (this.socksProxyListPosition + by < this.socksProxies.length) ? this.socksProxyListPosition + by : 0
   }
 }

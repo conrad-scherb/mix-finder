@@ -20,10 +20,11 @@ export class AppController {
     return await this.appService.getTrack(url);
   }
 
-  @Post("find-relations")
-  async findRelatedTracks (
+  @Post("get-adjacent-details")
+  async getAdjacentTrackDetails (
     @Body("id") id: string
   ): Promise<any> {
-    return await this.appService.getAdjacentTracks(id);
+    let adjacentTracks = await this.appService.getAdjacentTracks(id);
+    return await this.appService.getBatchTracks(adjacentTracks);
   }
 }
