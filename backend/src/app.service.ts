@@ -17,7 +17,6 @@ export class AppService {
       .on('data', (data) => results.push(data))
       .on('end', () => {
           this.socksProxies = results.map(r => r.Proxy);
-          console.log(this.socksProxies)
       });
   }
 
