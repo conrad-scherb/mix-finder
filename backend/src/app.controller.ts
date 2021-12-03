@@ -6,25 +6,19 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Post("get-tracklists")
-  async getTracklists(
-    @Body("url") url: string
-  ): Promise<TrackList> {
+  @Post('get-tracklists')
+  async getTracklists(@Body('url') url: string): Promise<TrackList> {
     return await this.appService.getTracklist(url);
   }
-  
-  @Post("get-track")
-  async getTracks(
-    @Body("url") url: string
-  ): Promise<Track> {
+
+  @Post('get-track')
+  async getTracks(@Body('url') url: string): Promise<Track> {
     return await this.appService.getTrack(url);
   }
 
-  @Post("get-adjacent-details")
-  async getAdjacentTrackDetails (
-    @Body("id") id: string
-  ): Promise<any> {
-    let adjacentTracks = await this.appService.getAdjacentTracks(id);
+  @Post('get-adjacent-details')
+  async getAdjacentTrackDetails(@Body('id') id: string): Promise<any> {
+    const adjacentTracks = await this.appService.getAdjacentTracks(id);
     return await this.appService.getBatchTracks(adjacentTracks);
   }
 }
