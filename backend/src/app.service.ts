@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as csv from 'csv-parser';
 import * as path from 'path';
 import { trackToAppearanceURLs } from './utils/helpers';
+import { getConnection } from 'typeorm';
 
 @Injectable()
 export class AppService {
@@ -31,6 +32,7 @@ export class AppService {
   }
 
   async getTrack(url: string): Promise<Track | undefined> {
+    console.log(getConnection());
     return await getTrack(url);
   }
 
