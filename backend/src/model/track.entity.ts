@@ -11,8 +11,8 @@ export class TrackEntity {
   @Column({ type: 'varchar', length: 255 })
   artist: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  artwork: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  artwork: string | null;
 
   @Column('simple-array', { nullable: true })
   edges: string[] | null;

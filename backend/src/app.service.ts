@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  DJSet,
   findAdjacentTracks,
   getTrack,
   getTracklist,
@@ -9,8 +10,9 @@ import {
 import * as fs from 'fs';
 import * as csv from 'csv-parser';
 import * as path from 'path';
-import { trackToAppearanceNames, trackToAppearanceURLs } from './utils/helpers';
-import { getConnection, getRepository } from 'typeorm';
+import { getIdFromURL, trackToAppearanceNames, trackToAppearanceURLs } from './utils/helpers';
+import { addTrackToRepository } from './utils/database';
+import { getRepository } from 'typeorm';
 import { TrackEntity } from './model/track.entity';
 
 @Injectable()
@@ -36,21 +38,36 @@ export class AppService {
     url: string,
     proxy: string | null = null,
   ): Promise<Track | undefined> {
-    const track = await getTrack(url, proxy);
-    const trackForDB = new TrackEntity();
-    trackForDB.id = track.url.replace(
-      'https://www.1001tracklists.com/track/',
-      '',
-    );
-    trackForDB.artist = track.artist;
-    trackForDB.artwork = track.artwork;
-    trackForDB.title = track.title;
-    trackForDB.appearanceNames = trackToAppearanceNames(track);
-    trackForDB.appearanceURLs = trackToAppearanceURLs(track);
-    console.log(trackForDB);
-    await getConnection().manager.save(trackForDB);
+    const trackFromDB = await getRepository(TrackEntity).findOne({
+      id: getIdFromURL(url),
+    });
 
-    return track;
+    if (trackFromDB) {
+      const appearances: DJSet[] = [];
+      for (const i in trackFromDB.appearanceURLs) {
+        appearances.push({
+          name: trackFromDB.appearanceNames[i],
+          url: trackFromDB.appearanceURLs[i],
+        });
+      }
+
+      const track: Track = {
+        url: `https://1001tracklists.com/track/${trackFromDB.id}`,
+        title: trackFromDB.title,
+        artist: trackFromDB.artist,
+        artwork: trackFromDB.artwork,
+        appearances: appearances,
+      };
+
+      return track;
+    } else {
+      const track = await getTrack(url, proxy);
+
+      if (track) {
+        await addTrackToRepository(track, getIdFromURL(track.url));
+      }
+      return track;
+    }
   }
 
   async getBatchTracks(urls: string[]): Promise<(Track | undefined)[]> {
@@ -90,19 +107,9 @@ export class AppService {
     this.rotateProxies(tracklistUrls.length);
 
     const adjacentTracks = await Promise.all(scrapePromises);
-
     const adjacentTrackIds = Array.prototype.concat.apply([], adjacentTracks);
 
-    const trackForDB = new TrackEntity();
-    trackForDB.id = id;
-    trackForDB.artist = track.artist;
-    trackForDB.title = track.title;
-    trackForDB.artwork = track.artwork;
-    trackForDB.edges = adjacentTrackIds;
-    trackForDB.appearanceNames = trackToAppearanceNames(track);
-    trackForDB.appearanceURLs = tracklistUrls;
-
-    await getConnection().manager.save(trackForDB);
+    await addTrackToRepository(track, id, adjacentTrackIds);
 
     return adjacentTrackIds;
   }
