@@ -1,6 +1,7 @@
-import { Column, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-export abstract class TrackEntity {
+@Entity()
+export class TrackEntity {
   @PrimaryColumn({ type: 'varchar', length: 255 })
   id: string;
 
@@ -8,11 +9,17 @@ export abstract class TrackEntity {
   title: string;
 
   @Column({ type: 'varchar', length: 255 })
-  aritst: string;
+  artist: string;
 
   @Column({ type: 'varchar', length: 255 })
   artwork: string;
 
+  @Column('simple-array', { nullable: true })
+  edges: string[] | null;
+
   @Column('simple-array')
-  edges: string[];
+  appearanceNames: string[];
+
+  @Column('simple-array')
+  appearanceURLs: string[];
 }

@@ -9,8 +9,9 @@ import {
 import * as fs from 'fs';
 import * as csv from 'csv-parser';
 import * as path from 'path';
-import { trackToAppearanceURLs } from './utils/helpers';
-import { getConnection } from 'typeorm';
+import { trackToAppearanceNames, trackToAppearanceURLs } from './utils/helpers';
+import { getConnection, getRepository } from 'typeorm';
+import { TrackEntity } from './model/track.entity';
 
 @Injectable()
 export class AppService {
@@ -31,16 +32,32 @@ export class AppService {
     return await getTracklist(url, null);
   }
 
-  async getTrack(url: string): Promise<Track | undefined> {
-    console.log(getConnection());
-    return await getTrack(url);
+  async getTrack(
+    url: string,
+    proxy: string | null = null,
+  ): Promise<Track | undefined> {
+    const track = await getTrack(url, proxy);
+    const trackForDB = new TrackEntity();
+    trackForDB.id = track.url.replace(
+      'https://www.1001tracklists.com/track/',
+      '',
+    );
+    trackForDB.artist = track.artist;
+    trackForDB.artwork = track.artwork;
+    trackForDB.title = track.title;
+    trackForDB.appearanceNames = trackToAppearanceNames(track);
+    trackForDB.appearanceURLs = trackToAppearanceURLs(track);
+    console.log(trackForDB);
+    await getConnection().manager.save(trackForDB);
+
+    return track;
   }
 
   async getBatchTracks(urls: string[]): Promise<(Track | undefined)[]> {
     const promises = [];
     for (const i in urls) {
       promises.push(
-        getTrack(
+        this.getTrack(
           urls[i],
           this.socksProxies[parseInt(i) + this.socksProxyListPosition].replace(
             /"/g,
@@ -74,7 +91,20 @@ export class AppService {
 
     const adjacentTracks = await Promise.all(scrapePromises);
 
-    return Array.prototype.concat.apply([], adjacentTracks); // Nodes of all related tracks
+    const adjacentTrackIds = Array.prototype.concat.apply([], adjacentTracks);
+
+    const trackForDB = new TrackEntity();
+    trackForDB.id = id;
+    trackForDB.artist = track.artist;
+    trackForDB.title = track.title;
+    trackForDB.artwork = track.artwork;
+    trackForDB.edges = adjacentTrackIds;
+    trackForDB.appearanceNames = trackToAppearanceNames(track);
+    trackForDB.appearanceURLs = tracklistUrls;
+
+    await getConnection().manager.save(trackForDB);
+
+    return adjacentTrackIds;
   }
 
   rotateProxies(by: number) {

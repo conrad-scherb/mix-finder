@@ -39,6 +39,7 @@ class ConfigService {
       username: this.getValue('POSTGRES_USER'),
       password: this.getValue('POSTGRES_PASSWORD'),
       database: this.getValue('POSTGRES_DATABASE'),
+      synchronize: true,
 
       entities: [join(__dirname, '**', '*.entity.{ts,js}')],
 
