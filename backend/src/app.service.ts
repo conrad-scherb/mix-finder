@@ -10,7 +10,11 @@ import {
 import * as fs from 'fs';
 import * as csv from 'csv-parser';
 import * as path from 'path';
-import { getIdFromURL, trackToAppearanceNames, trackToAppearanceURLs } from './utils/helpers';
+import {
+  getIdFromURL,
+  trackToAppearanceNames,
+  trackToAppearanceURLs,
+} from './utils/helpers';
 import { addTrackToRepository } from './utils/database';
 import { getRepository } from 'typeorm';
 import { TrackEntity } from './model/track.entity';
@@ -61,11 +65,18 @@ export class AppService {
 
       return track;
     } else {
+      if (proxy == null) {
+        proxy = this.socksProxies[this.socksProxyListPosition];
+      }
+
       const track = await getTrack(url, proxy);
 
       if (track) {
         await addTrackToRepository(track, getIdFromURL(track.url));
       }
+
+      this.rotateProxies(1);
+
       return track;
     }
   }
@@ -83,35 +94,47 @@ export class AppService {
         ),
       );
     }
-    this.rotateProxies(promises.length);
     return await Promise.all(promises);
   }
 
-  async getAdjacentTracks(id: string) {
-    const track = await this.getTrack(id);
-    const tracklistUrls = trackToAppearanceURLs(track);
-    const scrapePromises: Promise<string[]>[] = [];
+  async getAdjacentTracks(id: string): Promise<string[]> {
+    const trackFromDB = await getRepository(TrackEntity).findOne({
+      id: id,
+    });
 
-    for (const i in tracklistUrls) {
-      const scrape = findAdjacentTracks(
-        tracklistUrls[parseInt(i)],
-        id,
-        this.socksProxies[parseInt(i) + this.socksProxyListPosition].replace(
-          /"/g,
-          '',
-        ),
-      );
-      scrapePromises.push(scrape);
+    if (trackFromDB && trackFromDB?.edges != null) {
+      return trackFromDB.edges;
+    } else {
+      const track = await this.getTrack(id);
+      const tracklistUrls = trackToAppearanceURLs(track);
+      const scrapePromises: Promise<string[]>[] = [];
+
+      for (const i in tracklistUrls) {
+        const scrape = findAdjacentTracks(
+          tracklistUrls[parseInt(i)],
+          id,
+          this.socksProxies[parseInt(i) + this.socksProxyListPosition].replace(
+            /"/g,
+            '',
+          ),
+        );
+        scrapePromises.push(scrape);
+      }
+
+      this.rotateProxies(tracklistUrls.length);
+
+      const adjacentTracks = await Promise.all(scrapePromises);
+      const adjacentTrackIds = Array.prototype.concat.apply([], adjacentTracks);
+
+      await addTrackToRepository(track, id, adjacentTrackIds);
+
+      return adjacentTrackIds;
     }
+  }
 
-    this.rotateProxies(tracklistUrls.length);
-
-    const adjacentTracks = await Promise.all(scrapePromises);
-    const adjacentTrackIds = Array.prototype.concat.apply([], adjacentTracks);
-
-    await addTrackToRepository(track, id, adjacentTrackIds);
-
-    return adjacentTrackIds;
+  async getAdjacentTrackDetails(id: string): Promise<Track[]> {
+    const adjacentTracks = await this.getAdjacentTracks(id);
+    return await this.getBatchTracks(adjacentTracks);
   }
 
   rotateProxies(by: number) {

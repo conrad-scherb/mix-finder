@@ -18,7 +18,6 @@ export class AppController {
 
   @Post('get-adjacent-details')
   async getAdjacentTrackDetails(@Body('id') id: string): Promise<any> {
-    const adjacentTracks = await this.appService.getAdjacentTracks(id);
-    return await this.appService.getBatchTracks(adjacentTracks);
+    return await this.appService.getAdjacentTrackDetails(id);
   }
 }
