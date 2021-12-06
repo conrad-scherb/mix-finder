@@ -10,14 +10,11 @@ import {
 import * as fs from 'fs';
 import * as csv from 'csv-parser';
 import * as path from 'path';
-import {
-  getIdFromURL,
-  trackToAppearanceNames,
-  trackToAppearanceURLs,
-} from './utils/helpers';
+import { getIdFromURL, trackToAppearanceURLs } from './utils/helpers';
 import { addTrackToRepository } from './utils/database';
 import { getRepository } from 'typeorm';
 import { TrackEntity } from './model/track.entity';
+import { randomInt } from 'crypto';
 
 @Injectable()
 export class AppService {
@@ -65,17 +62,11 @@ export class AppService {
 
       return track;
     } else {
-      if (proxy == null) {
-        proxy = this.socksProxies[this.socksProxyListPosition];
-      }
-
       const track = await getTrack(url, proxy);
 
       if (track) {
         await addTrackToRepository(track, getIdFromURL(track.url));
       }
-
-      this.rotateProxies(1);
 
       return track;
     }
@@ -84,16 +75,19 @@ export class AppService {
   async getBatchTracks(urls: string[]): Promise<(Track | undefined)[]> {
     const promises = [];
     for (const i in urls) {
-      promises.push(
-        this.getTrack(
-          urls[i],
-          this.socksProxies[parseInt(i) + this.socksProxyListPosition].replace(
-            /"/g,
-            '',
+      if (urls[i]) {
+        promises.push(
+          this.getTrack(
+            urls[i],
+            this.socksProxies[
+              parseInt(i) + this.socksProxyListPosition
+            ].replace(/"/g, ''),
           ),
-        ),
-      );
+        );
+      }
     }
+
+    this.rotateProxies(promises.length);
     return await Promise.all(promises);
   }
 
@@ -105,7 +99,12 @@ export class AppService {
     if (trackFromDB && trackFromDB?.edges != null) {
       return trackFromDB.edges;
     } else {
-      const track = await this.getTrack(id);
+      const track = await this.getTrack(
+        id,
+        this.socksProxies[this.socksProxyListPosition],
+      );
+      console.log('GOT TRACK:');
+      console.log(track);
       const tracklistUrls = trackToAppearanceURLs(track);
       const scrapePromises: Promise<string[]>[] = [];
 

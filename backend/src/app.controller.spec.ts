@@ -11,6 +11,7 @@ describe('AppController', () => {
       providers: [AppService],
     }).compile();
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     appController = app.get<AppController>(AppController);
   });
 });
